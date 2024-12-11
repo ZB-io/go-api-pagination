@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>pagination: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/hsbc/go-api-pagination/pagination/paginator.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package pagination
+
+import (
+        "context"
+
+        "github.com/google/go-github/v65/github"
+)
+
+// ListFunc is an interface that returns a list of items for the given type
+// for example it could be:
+//
+//        type listFunc struct {
+//                client *github.Client
+//        }
+//
+//        func (l *listFunc) List(ctx context.Context, opt *github.ListOptions) ([]*github.Repository, *github.Response, error) {
+//                t, r, err := l.client.Apps.ListRepos(ctx, opt)
+//                return t.Repositories, r, err
+//        }
+type ListFunc[T any] interface {
+        List(ctx context.Context, opt *github.ListOptions) ([]T, *github.Response, error)
+}
+
+// ProcessFunc is a function that processes an item for the given type
+// this is optional as the user may not want to process the items so
+// they can input a skip function that does nothing
+// example:
+//
+//        type processFunc struct {
+//                client *github.Client
+//        }
+//
+//        func (p *processFunc) Process(ctx context.Context, item *github.Repository) error {
+//                fmt.Println(item.GetName())
+//                return nil
+//        }
+type ProcessFunc[T any] interface {
+        Process(ctx context.Context, item T) error
+}
+
+// RateLimitFunc is a function that handles rate limiting
+// it returns a bool to indicate if the pagination should continue
+// and an error if the users wishes to return more information/errors
+// example:
+//
+//        type rateLimitFunc struct {
+//        }
+//
+//        func (r *rateLimitFunc) RateLimit(ctx context.Context, resp *github.Response) (bool, error) {
+//                return true, nil
+//        }
+type RateLimitFunc interface {
+        RateLimit(ctx context.Context, resp *github.Response) (bool, error)
+}
+
+type PaginatorOpts struct {
+        *github.ListOptions
+}
+
+func Paginator[T any](ctx context.Context, listFunc ListFunc[T], processFunc ProcessFunc[T], rateLimitFunc RateLimitFunc, Opts *PaginatorOpts) ([]T, error) <span class="cov8" title="1">{
+        var allItems []T
+
+        opts := listOpts(Opts)
+
+        for </span><span class="cov8" title="1">{
+                items, resp, err := listFunc.List(ctx, opts)
+                if err != nil </span><span class="cov8" title="1">{
+                        return allItems, err
+                }</span>
+
+                <span class="cov8" title="1">allItems = append(allItems, items...)
+
+                for _, item := range items </span><span class="cov8" title="1">{
+                        if err = processFunc.Process(ctx, item); err != nil </span><span class="cov8" title="1">{
+                                return allItems, err
+                        }</span>
+                }
+
+                // Handle rate limits
+                <span class="cov8" title="1">shouldContinue, err := rateLimitFunc.RateLimit(ctx, resp)
+                if err != nil </span><span class="cov8" title="1">{
+                        return allItems, err
+                }</span>
+
+                <span class="cov8" title="1">if !shouldContinue </span><span class="cov8" title="1">{
+                        break</span>
+                }
+
+                <span class="cov8" title="1">if resp.NextPage == 0 </span><span class="cov8" title="1">{
+                        break</span>
+                }
+
+                <span class="cov8" title="1">opts.Page = resp.NextPage</span>
+        }
+
+        <span class="cov8" title="1">return allItems, nil</span>
+}
+
+func listOpts(opts *PaginatorOpts) *github.ListOptions <span class="cov8" title="1">{
+
+        if opts == nil || opts.ListOptions == nil </span><span class="cov8" title="1">{
+                return &amp;github.ListOptions{PerPage: 100, Page: 1}
+        }</span>
+        <span class="cov8" title="1">if opts.PerPage == 0 </span><span class="cov8" title="1">{
+                opts.PerPage = 100
+        }</span>
+
+        <span class="cov8" title="1">return opts.ListOptions</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
