@@ -97,6 +97,8 @@ These test scenarios cover the main functionality of the `listOpts` function, in
 - Structure initialization cases
 
 Each scenario focuses on a specific aspect of the function's behavior, ensuring comprehensive test coverage while maintaining clear separation of concerns.
+
+roost_feedback [2/21/2025, 6:59:37 AM]:- Add more comments to the test
 */
 
 // ********RoostGPT********
@@ -109,19 +111,24 @@ import (
 	"github.com/google/go-github/v65/github"
 )
 
+// TestListOpts verifies the behavior of the listOpts function under various scenarios
+// It tests the handling of pagination parameters including default values, edge cases,
+// and custom configurations
 func TestListOpts(t *testing.T) {
-
+	// Define test cases covering different scenarios for pagination options
 	tests := []struct {
-		name     string
-		input    *PaginatorOpts
-		expected *github.ListOptions
+		name     string              // Description of the test case
+		input    *PaginatorOpts      // Input pagination options
+		expected *github.ListOptions // Expected output after processing
 	}{
 		{
+			// Tests default behavior when no options are provided
 			name:     "Scenario 1: Default Options When Nil Parameters",
 			input:    nil,
 			expected: &github.ListOptions{PerPage: 100, Page: 1},
 		},
 		{
+			// Verifies that zero PerPage value is replaced with default
 			name: "Scenario 2: Default PerPage When Zero Value",
 			input: &PaginatorOpts{
 				ListOptions: &github.ListOptions{
@@ -132,6 +139,7 @@ func TestListOpts(t *testing.T) {
 			expected: &github.ListOptions{PerPage: 100, Page: 5},
 		},
 		{
+			// Ensures valid custom values are preserved
 			name: "Scenario 3: Custom Values Preservation",
 			input: &PaginatorOpts{
 				ListOptions: &github.ListOptions{
@@ -142,11 +150,13 @@ func TestListOpts(t *testing.T) {
 			expected: &github.ListOptions{PerPage: 50, Page: 3},
 		},
 		{
+			// Tests handling of nil ListOptions within PaginatorOpts
 			name:     "Scenario 4: PaginatorOpts With Nil ListOptions",
 			input:    &PaginatorOpts{ListOptions: nil},
 			expected: &github.ListOptions{PerPage: 100, Page: 1},
 		},
 		{
+			// Validates handling of large PerPage values
 			name: "Scenario 5: Maximum PerPage Value Handling",
 			input: &PaginatorOpts{
 				ListOptions: &github.ListOptions{
@@ -157,6 +167,7 @@ func TestListOpts(t *testing.T) {
 			expected: &github.ListOptions{PerPage: 1000, Page: 1},
 		},
 		{
+			// Tests behavior with negative page numbers
 			name: "Scenario 6: Negative Page Value Handling",
 			input: &PaginatorOpts{
 				ListOptions: &github.ListOptions{
@@ -167,6 +178,7 @@ func TestListOpts(t *testing.T) {
 			expected: &github.ListOptions{PerPage: 100, Page: -1},
 		},
 		{
+			// Verifies handling of zero page value
 			name: "Scenario 7: Zero Page Value Handling",
 			input: &PaginatorOpts{
 				ListOptions: &github.ListOptions{
@@ -178,16 +190,20 @@ func TestListOpts(t *testing.T) {
 		},
 	}
 
+	// Iterate through test cases
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Log("Testing:", tt.name)
 
+			// Execute the function under test
 			result := listOpts(tt.input)
 
+			// Verify PerPage value matches expected
 			if result.PerPage != tt.expected.PerPage {
 				t.Errorf("PerPage mismatch - got: %v, want: %v",
 					result.PerPage, tt.expected.PerPage)
 			}
+			// Verify Page value matches expected
 			if result.Page != tt.expected.Page {
 				t.Errorf("Page mismatch - got: %v, want: %v",
 					result.Page, tt.expected.Page)
